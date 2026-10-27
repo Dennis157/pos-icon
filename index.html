@@ -14,11 +14,14 @@
 <style>
   html, body { margin: 0; min-height: 100%; background: #d61920; }
   body { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: Arial, sans-serif; color: #fff; text-align: center; }
-  #box { padding: 24px; max-width: 420px; }
+  #box { padding: 24px; max-width: 440px; }
   img { width: 96px; height: 96px; border-radius: 20px; }
   h1 { font-size: 26px; margin: 16px 0 8px 0; }
   p { font-size: 18px; margin: 10px 0; }
-  a.button { display: inline-block; margin-top: 12px; padding: 14px 28px; background: #fff; color: #d61920; font-weight: bold; font-size: 20px; border-radius: 10px; text-decoration: none; }
+  .button { display: none; margin: 10px 0; padding: 14px 28px; background: #fff; color: #d61920; font-weight: bold; font-size: 20px; border: 0; border-radius: 10px; text-decoration: none; cursor: pointer; }
+  .button.second { background: transparent; color: #fff; border: 2px solid #fff; font-size: 17px; }
+  #help { display: none; text-align: left; background: rgba(0, 0, 0, 0.18); border-radius: 10px; padding: 4px 16px; margin-top: 16px; font-size: 16px; }
+  #help p { font-size: 16px; }
   #setup { display: none; background: #fff; color: #333; padding: 16px; border-radius: 10px; text-align: left; }
 </style>
 </head>
@@ -26,8 +29,17 @@
   <div id="box">
     <img src="icon-192.png" alt="POS">
     <h1>Wines &amp; Spirits POS</h1>
-    <p id="status">Opening the POS...</p>
-    <a id="open" class="button" href="#">Open the POS</a>
+    <p id="status">One moment...</p>
+
+    <button id="install" class="button" type="button">Install the POS app</button>
+    <a id="open" class="button second" href="#">Open the POS in the browser</a>
+
+    <div id="help">
+      <p><b>Android (Chrome):</b> tap the button above. If there is no button, tap the three dots at the top right, then <b>Install app</b>.</p>
+      <p><b>iPhone (Safari):</b> tap the Share button, then <b>Add to Home Screen</b>.</p>
+      <p>After installing, open the POS from the new icon on your home screen.</p>
+    </div>
+
     <div id="setup">
       <p><b>The POS link is not set yet.</b></p>
       <p>Open the file <b>config.js</b> in this repository and put your POS link between the quotes. It starts with https://script.google.com/ and ends with /exec.</p>
@@ -37,19 +49,60 @@
 
   <script src="config.js"></script>
   <script>
+    function show(id, display) { document.getElementById(id).style.display = display; }
+
     var linkOk = typeof POS_URL == "string" &&
       /^https:\/\/script\.google\.com\/(a\/[^\/]+\/)?macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(POS_URL);
 
+    // true when this page was opened from the icon of the installed app
+    var installed = false;
+    if (window.matchMedia) {
+      installed = window.matchMedia("(display-mode: standalone)").matches ||
+                  window.matchMedia("(display-mode: minimal-ui)").matches ||
+                  window.matchMedia("(display-mode: fullscreen)").matches;
+    }
+    if (window.navigator.standalone === true) {
+      installed = true;      // an iPhone home-screen app
+    }
+
     if (!linkOk) {
-      document.getElementById("status").style.display = "none";
-      document.getElementById("open").style.display = "none";
-      document.getElementById("setup").style.display = "block";
-    } else {
+      show("status", "none");
+      show("setup", "block");
+    } else if (installed) {
+      // opened from the app icon: go straight to the POS
+      document.getElementById("status").textContent = "Opening the POS...";
       document.getElementById("open").href = POS_URL;
-      // open the POS straight away; the button stays here in case you come back to this page
+      show("open", "inline-block");
       setTimeout(function () {
         window.location.href = POS_URL;
       }, 400);
+    } else {
+      // opened in a browser: stay on this page so the browser can offer to install it
+      document.getElementById("status").textContent = "Install the POS on this phone, then open it from your home screen.";
+      document.getElementById("open").href = POS_URL;
+      show("open", "inline-block");
+      show("help", "block");
+
+      var waiting = null;
+      window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        waiting = event;
+        show("install", "inline-block");
+      });
+      document.getElementById("install").onclick = function () {
+        if (waiting == null) {
+          return;
+        }
+        waiting.prompt();
+        waiting.userChoice.then(function () {
+          waiting = null;
+          show("install", "none");
+        });
+      };
+      window.addEventListener("appinstalled", function () {
+        document.getElementById("status").textContent = "Installed. Open the POS from the new icon on your home screen.";
+        show("install", "none");
+      });
     }
 
     // lets Chrome offer "Install app"
