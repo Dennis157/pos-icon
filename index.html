@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>POS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#d61920">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="POS">
+<style>
+  html, body { margin: 0; height: 100%; background: #d61920; }
+  #loading, #setup { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; font-family: Arial, sans-serif; font-size: 20px; padding: 24px; box-sizing: border-box; }
+  #setup { background: #fff; color: #333; display: none; }
+  #app { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; opacity: 0; }
+</style>
+</head>
+<body>
+  <div id="loading">Opening the POS...</div>
+  <div id="setup">
+    <div>
+      <p><b>The POS link is not set yet.</b></p>
+      <p>Open the file <b>config.js</b> in this repository and put your POS link between the quotes. It starts with https://script.google.com/ and ends with /exec.</p>
+    </div>
+  </div>
+  <iframe id="app" title="POS"></iframe>
+  <noscript>This app needs JavaScript.</noscript>
+
+  <script src="config.js"></script>
+  <script>
+    var frame = document.getElementById("app");
+    var linkOk = typeof POS_URL == "string" &&
+      /^https:\/\/script\.google\.com\/(a\/[^\/]+\/)?macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(POS_URL);
+
+    if (!linkOk) {
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("setup").style.display = "flex";
+    } else {
+      frame.onload = function () {
+        frame.style.opacity = "1";
+        document.getElementById("loading").style.display = "none";
+      };
+      frame.src = POS_URL;
+    }
+
+    // lets Chrome offer "Install app"
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+</body>
+</html>
