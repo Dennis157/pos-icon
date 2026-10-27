@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>POS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#d61920">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="POS">
+<style>
+  html, body { margin: 0; min-height: 100%; background: #d61920; }
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: Arial, sans-serif; color: #fff; text-align: center; }
+  #box { padding: 24px; max-width: 420px; }
+  img { width: 96px; height: 96px; border-radius: 20px; }
+  h1 { font-size: 26px; margin: 16px 0 8px 0; }
+  p { font-size: 18px; margin: 10px 0; }
+  a.button { display: inline-block; margin-top: 12px; padding: 14px 28px; background: #fff; color: #d61920; font-weight: bold; font-size: 20px; border-radius: 10px; text-decoration: none; }
+  #setup { display: none; background: #fff; color: #333; padding: 16px; border-radius: 10px; text-align: left; }
+</style>
+</head>
+<body>
+  <div id="box">
+    <img src="icon-192.png" alt="POS">
+    <h1>Wines &amp; Spirits POS</h1>
+    <p id="status">Opening the POS...</p>
+    <a id="open" class="button" href="#">Open the POS</a>
+    <div id="setup">
+      <p><b>The POS link is not set yet.</b></p>
+      <p>Open the file <b>config.js</b> in this repository and put your POS link between the quotes. It starts with https://script.google.com/ and ends with /exec.</p>
+    </div>
+  </div>
+  <noscript>This app needs JavaScript.</noscript>
+
+  <script src="config.js"></script>
+  <script>
+    var linkOk = typeof POS_URL == "string" &&
+      /^https:\/\/script\.google\.com\/(a\/[^\/]+\/)?macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(POS_URL);
+
+    if (!linkOk) {
+      document.getElementById("status").style.display = "none";
+      document.getElementById("open").style.display = "none";
+      document.getElementById("setup").style.display = "block";
+    } else {
+      document.getElementById("open").href = POS_URL;
+      // open the POS straight away; the button stays here in case you come back to this page
+      setTimeout(function () {
+        window.location.href = POS_URL;
+      }, 400);
+    }
+
+    // lets Chrome offer "Install app"
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+</body>
+</html>
